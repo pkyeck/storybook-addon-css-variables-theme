@@ -10,7 +10,7 @@ import { styled } from '@storybook/theming';
 import React, { useEffect } from 'react';
 
 import { ADDON_ID, ADDON_PARAM_KEY, CLEAR_LABEL } from './constants';
-import getCookie from './getCookie';
+import { getCookie, setCookie } from './cookie';
 
 type Files = {
   [key: string]: any;
@@ -51,9 +51,12 @@ const Dropdown = () => {
 
   const selected = globals.cssVariables || theme || id;
   const setSelected = (value: string | null) => {
-    updateGlobals({
-      cssVariables: value,
-    });
+    if (value != null) {
+      setCookie('cssVariables', value, 10);
+      updateGlobals({
+        cssVariables: value,
+      });
+    }
   };
 
   const emit = useChannel({});

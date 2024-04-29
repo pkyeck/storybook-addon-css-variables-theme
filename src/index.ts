@@ -1,7 +1,7 @@
 import { addons, makeDecorator } from '@storybook/addons';
 
 import { ADDON_PARAM_KEY, CLEAR_LABEL, EVENT_NAME } from './constants';
-import getCookie from './getCookie';
+import { getCookie } from './cookie';
 
 let currentCSS: any = null;
 
@@ -23,27 +23,14 @@ async function addBrandStyles(id: string, files: { [key: string]: any }) {
   }
 }
 
-function setCookie(cname: string, cvalue: string, exdays: number) {
-  const d = new Date();
-  d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
-  const expires = `expires=${d.toUTCString()}`;
-  document.cookie = `${cname}=${cvalue};${expires};path=/`;
-}
-
 function handleStyleSwitch({
   id,
   files,
-  save,
 }: {
   id: string;
   files: { [key: string]: any };
-  save: boolean;
 }) {
   addBrandStyles(id, files);
-
-  if (save) {
-    setCookie('cssVariables', id, 10);
-  }
 
   const customEvent = new CustomEvent(EVENT_NAME, { detail: { theme: id } });
   document?.dispatchEvent(customEvent);
@@ -65,11 +52,15 @@ export default makeDecorator({
         ? cookieId
         : null;
 
-    const themeToLoad = globalsTheme || theme || savedTheme || defaultTheme;
+    if (savedTheme != null && globalsTheme !== savedTheme) {
+      context.globals.cssVariables = savedTheme;
+    }
 
-    handleStyleSwitch({ id: themeToLoad, files, save: !theme || !savedTheme });
+    const themeToLoad = savedTheme || globalsTheme || theme || defaultTheme;
+
+    handleStyleSwitch({ id: themeToLoad, files });
     channel.on('cssVariablesChange', ({ id }: { id: string }) => {
-      handleStyleSwitch({ id, files, save: true });
+      handleStyleSwitch({ id, files });
     });
 
     return getStory(context);
